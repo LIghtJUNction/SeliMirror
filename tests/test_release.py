@@ -19,6 +19,24 @@ class ValidateRelease(unittest.TestCase):
         self.assertEqual(result['versionCode'],'100')
         self.assertEqual(result['id'],'selimirror')
 
+    def test_bundled_kpm_diagnostics_are_not_truncated(self):
+        kpm = (Path(__file__).resolve().parents[1] / 'module/bin/selimirror.kpm').read_bytes()
+        messages = (
+            b'\x013selimirror: missing hook %s\n',
+            b'\x013selimirror: missing symbol %s\n',
+            b'\x016selimirror: initial input policy captured (%lu bytes)\n',
+            b'\x013selimirror: requires kernel release %s\n',
+            b'\x013selimirror: hook %s failed: %d\n',
+            b'\x013selimirror: initial policy snapshot failed: %d\n',
+            b'\x013selimirror: task/cred layout differs from build config\n',
+            b'\x016selimirror: %s; event=%s; config=%s\n',
+            b'\x013selimirror: too late for capture; use pre-exec-init or '
+            b'policy=/absolute/clean-policy\n',
+        )
+        for message in messages:
+            with self.subTest(message=message):
+                self.assertGreaterEqual(kpm.find(message + b'\0'), 0)
+
     def test_duplicate_key(self):
         with self.assertRaises(ValueError):
             properties(GOOD+b'id=other\n')

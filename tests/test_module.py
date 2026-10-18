@@ -390,12 +390,14 @@ class ProductionModule(unittest.TestCase):
         machine = ModuleMachine(missing=("policydb_read",))
         self.assert_failed_before_hooks(machine, "policy=/clean/policy", -2)
         self.assertNotIn("filp_open", machine.names())
-        self.assertTrue(any("missing symbol policydb_read" in line for line in machine.logs))
+        self.assertIn("\x013selimirror: missing symbol policydb_read\n", machine.logs)
 
     def test_native_credential_layout_mismatch_is_rejected(self):
         machine = ModuleMachine()
         machine.put(machine.kp_symbols["task_struct_offset"] + 10, 2040, 2)
         self.assert_failed_before_hooks(machine, "policy=/clean/policy", -93)
+        self.assertIn("\x013selimirror: task/cred layout differs from build config\n",
+                      machine.logs)
 
     def test_late_capture_and_early_file_mode_are_rejected(self):
         self.assert_failed_before_hooks(ModuleMachine(), "capture", -11)
@@ -445,12 +447,15 @@ class ProductionModule(unittest.TestCase):
         self.assert_failed_before_hooks(machine, "policy=/clean/policy", -2)
         self.assertTrue(any(event[:1] == ("vfree",) and event[2] == "module_alloc"
                             for event in machine.events))
+        self.assertIn("\x013selimirror: missing hook selinux_setprocattr\n", machine.logs)
 
     def test_each_hook_install_failure_rolls_back_idempotently(self):
         for failed_index in range(4):
             with self.subTest(failed_index=failed_index):
                 machine = ModuleMachine(hook_failure=failed_index)
                 self.assertEqual(machine.initialize(), -4093)
+                self.assertIn(f"\x013selimirror: hook {QUERY_HOOKS[failed_index]} failed: -4093\n",
+                              machine.logs)
                 self.assertEqual(machine.hooks, {})
                 removed = [event[1] for event in machine.events if event[0] == "hook_remove"]
                 self.assertEqual(removed, list(reversed(QUERY_HOOKS[:failed_index])))
@@ -467,6 +472,8 @@ class ProductionModule(unittest.TestCase):
         machine = ModuleMachine()
         self.assertEqual(machine.initialize(), 0)
         self.assertEqual(tuple(machine.hooks), QUERY_HOOKS)
+        self.assertIn(f"\x016selimirror: baseline loaded; event=test; config={FIXTURE_CONFIG}\n",
+                      machine.logs)
         result, message = machine.control()
         self.assertEqual(result, 0)
         self.assertIn("state=on source=file", message)
@@ -631,6 +638,8 @@ class ProductionModule(unittest.TestCase):
         self.assertEqual(machine.global_value("baseline_bytes"), len(data))
         parsed = [event[2] for event in machine.events if event[0] == "policydb_read"]
         self.assertEqual(parsed, [data])
+        self.assertIn(f"\x016selimirror: initial input policy captured ({len(data)} bytes)\n",
+                      machine.logs)
         self.assertIn("state=on source=initial-input", machine.control()[1])
         self.assertEqual(machine.exit(), 0)
 
