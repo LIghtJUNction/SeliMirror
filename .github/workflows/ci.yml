@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  repository-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Verify project structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s README.md
+          test -s .github/workflows/ci.yml
+          echo "Repository metadata present."
