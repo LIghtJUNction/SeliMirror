@@ -1,0 +1,4 @@
+# Host-side ARM64 execution tests; not KPM runtime dependencies.
+unicorn==2.1.4
+capstone==5.0.9
+pyelftools==0.33

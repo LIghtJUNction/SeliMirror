@@ -1,0 +1,7 @@
+id=selimirror
+name=SeliMirror (KernelPatch companion)
+version=v0.1.0
+versionCode=100
+author=SeliMirror contributors
+description=Stages a reference SM8150/4.14.268 KernelPatch KPM and controller; manual KP loading is required. Experimental.
+updateJson=https://modules.kernelsu.org/api/v1/modules/selimirror/update.json

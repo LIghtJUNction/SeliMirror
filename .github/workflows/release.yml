@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: selimirror-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install validator dependency
+        run: python3 -m pip install --disable-pip-version-check PyYAML==6.0.3
+      - name: Build and precheck the companion ZIP
+        run: python3 scripts/check_release.py --out dist/selimirror.zip
+      - name: Resolve release tag
+        id: metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="$(sed -n 's/^version=//p' module/module.prop)"
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || exit 1
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            [[ "$GITHUB_REF_NAME" == "$tag" ]] || { echo "Tag and module.prop disagree" >&2; exit 1; }
+          else
+            # Manual workflow_dispatch: create the version tag on the checked-out commit.
+            [[ "$GITHUB_REF_NAME" == main ]] || { echo "Manual releases must use main" >&2; exit 1; }
+            if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+              remote_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq .object.sha)"
+              [[ "$remote_sha" == "$GITHUB_SHA" ]] || { echo "Tag already points to another commit" >&2; exit 1; }
+            else
+              gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$tag" -f "sha=$GITHUB_SHA" >/dev/null
+            fi
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Publish with KernelSU Modules validator (immutable only)
+        uses: KernelSU-Modules/tools/actions/module-release@e0ac1a6193e698beac3c2fc47dec88d180efca8a
+        id: publish
+        with:
+          zip: dist/selimirror.zip
+          tag: ${{ steps.metadata.outputs.tag }}
+          name: SeliMirror ${{ steps.metadata.outputs.tag }}
+          release-notes-file: CHANGELOG.md
+          prerelease: ${{ contains(steps.metadata.outputs.tag, '-') }}
+          require-immutable: 'true'
+      - name: Publish result
+        env:
+          RELEASE_URL: ${{ steps.publish.outputs.release-url }}
+          SHA256: ${{ steps.publish.outputs.sha256 }}
+        run: |
+          echo "Immutable release: $RELEASE_URL"
+          echo "ZIP sha256: $SHA256"

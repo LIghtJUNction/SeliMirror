@@ -1,0 +1,46 @@
+selimirror — 0.1.0
+Implementation/adaptation date: 2026-10-18
+
+This project ports the SELinux query-view behavior of ReSukiSU (now BakaSU)
+to a standalone KernelPatch module for the pinned Xiaomi MIUI 4.14 kernel.
+It is an independent development deliverable, not an official release of
+ReSukiSU, BakaSU, KernelPatch, Xiaomi, or Kam.
+
+ReSukiSU / BakaSU:
+  https://github.com/ReSukiSU/ReSukiSU
+  https://github.com/Baka-SU/BakaSU
+  Revision 896e8981e0ed76ec14d1dcb39ab793438b304886.
+  The relevant kernel code is under kernel/LICENSE (GPL version 2).
+  Query ordering, UID filtering, policy-view behavior and status semantics
+  are adapted as described in UPSTREAM.md and docs/semantics.md.
+  Copyright belongs to the respective upstream contributors.
+
+KernelPatch:
+  https://github.com/bmax121/KernelPatch
+  Revision ef52c62b339bd2da51880922249bf4edef71b1cf.
+  Copyright (C) 2023 bmax121. All Rights Reserved.
+  ABI definitions and userspace protocol constants are adapted from its
+  GPL-2.0-or-later interfaces. The source retains that SPDX designation.
+  The resident ARM64 gateway is a new implementation for this port.
+
+Xiaomi kernel:
+  https://github.com/Laulan56/android_kernel_xiaomi_sm8150
+  Revision bd65f57d4c36882a5dfd34557e64198516ed392b, branch miui.
+  Linux and Android kernel contributors retain their original copyrights.
+  The build uses this source tree's native headers. The included reference
+  configuration is generated from its raphael_stock_defconfig with the
+  documented CPU mask values from raphael_defconfig.
+
+Kam:
+  https://github.com/MemDeco-WG/Kam
+  Revision 3835842ca90cefc621383e72e01078481122aa30.
+  The README and module-development guidance were reviewed. No Kam source,
+  template, package format, or runtime dependency is bundled in this KPM.
+
+The project as a combined work is distributed under GNU GPL version 2.
+Files marked GPL-2.0-only use that version only; files marked
+GPL-2.0-or-later retain the upstream option for those files separately.
+The complete GPL version 2 text is included in LICENSE.
+
+The code and build artifacts are provided without warranty. No real-device
+or Hunter 6.72 pass result is asserted by this development delivery.

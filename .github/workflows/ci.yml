@@ -10,15 +10,35 @@ permissions:
   contents: read
 
 jobs:
-  repository-check:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-      - name: Verify project structure
-        shell: bash
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install test dependencies
         run: |
-          set -euo pipefail
-          test -s README.md
-          test -s .github/workflows/ci.yml
-          echo "Repository metadata present."
+          python3 -m pip install --disable-pip-version-check -r tests/requirements.txt PyYAML==6.0.3
+      - name: Compile native tests
+        run: make test
+      - name: Validate bundled ARM64 ELFs
+        run: |
+          python3 tools/check_kpm.py module/bin/selimirror.kpm
+          python3 scripts/check_release.py --out dist/selimirror-test.zip
+          python3 scripts/check_release.py --zip dist/selimirror-test.zip
+      - name: Packaging regression tests
+        run: python3 -m unittest discover -s tests -p test_release.py -v
+      - name: ARM64 gateway tests
+        run: |
+          mkdir -p build
+          clang --target=aarch64-linux-gnu -march=armv8-a -Iinclude -c src/gateway.S -o build/gateway_asm.o
+          python3 tests/test_gateway.py --object build/gateway_asm.o -v
+      - name: Actual KPM and controller emulation
+        run: |
+          python3 tests/test_module.py --module module/bin/selimirror.kpm -v
+          python3 tests/test_rskctl.py --binary module/bin/rskctl
+      - name: Upload verified package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: selimirror-validation
+          path: dist/selimirror-test.zip
+          retention-days: 7

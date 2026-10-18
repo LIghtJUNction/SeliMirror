@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/KernelSU-Modules/tools/main/schemas/module.schema.json
+schemaVersion: 1
+id: selimirror
+name: SeliMirror
+summary: Experimental KernelPatch SELinux baseline query view for Xiaomi SM8150 4.14
+# README explicitly states the KernelSU ZIP stages binaries but does not load a KPM.
+description: README.md
+license: GPL-2.0-only
+homepage: https://github.com/LIghtJUNction/SeliMirror
+support: https://github.com/LIghtJUNction/SeliMirror/issues
+authors:
+  - name: SeliMirror contributors
+compatibility:
+  architectures: [arm64-v8a]
+release:
+  assetPattern: 'selimirror-*.zip'
+tags: [kernel, system, tools]
