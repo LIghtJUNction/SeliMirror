@@ -9,7 +9,6 @@ replaced. Unknown imports or relocation kinds fail the test.
 """
 
 import io
-import struct
 
 from elftools.elf.elffile import ELFFile
 from unicorn import Uc, UcError, UC_ARCH_ARM64, UC_MODE_ARM, UC_HOOK_CODE
